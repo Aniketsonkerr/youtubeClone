@@ -2,7 +2,7 @@ import commentModel from "../models/comment.model.js";
 
 // Create a new comment
 export function addComment(req, res) {
-  const { user, video, message } = req.body;
+  const { video, message } = req.body;
 
   // Create a new comment document
   const newComment = new commentModel({

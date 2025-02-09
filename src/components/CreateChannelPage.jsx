@@ -39,7 +39,6 @@ function CreateChannelPage() {
       setChannelBanner("");
       setDescription("");
       setChannelName("");
-      navigate(`/channel/${result._id}`);
     } catch (error) {
       alert(`Error: ${error.message}`);
     }

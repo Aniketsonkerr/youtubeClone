@@ -15,9 +15,10 @@ export function verifyToken(req, res, next) {
           return res.status(403).json({ message: err });
         }
         userModel
-          .findOne(verifiedToken._id)
+          .findOne({ _id: verifiedToken.id })
           .then((user) => {
             req.user = user;
+            console.log(user);
             next();
           })
           .catch((err) => res.status(500).json({ message: err.message }));

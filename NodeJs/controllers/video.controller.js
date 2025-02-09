@@ -30,7 +30,8 @@ export function uploadVideo(req, res) {
       likes,
       dislikes,
       genres,
-      uploader: req.user._id,
+      uploader: req.user.username,
+      uploaderId: req.user.id,
     });
     newVideo
       .save()
