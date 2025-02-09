@@ -14,7 +14,9 @@ app.listen(3000, () => {
 app.use(express.json());
 app.use(cors());
 
-mongoose.connect("mongodb://localhost:27017");
+mongoose.connect(
+  "mongodb+srv://Aniketsonkerr:Anni123@cluster0.cv621om.mongodb.net/"
+);
 
 const db = mongoose.connection;
 
