@@ -3,12 +3,12 @@ import { createRoot } from "react-dom/client";
 import "./index.css";
 import App from "./App.jsx";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
-import HomePage from "./components/HomePage.jsx";
-import ErrorPage from "./components/ErrorPage.jsx";
-import VideoPage from "./components/videoPage.jsx";
-import SignIn from "./components/SignIn.jsx";
-import CreateChannelPage from "./components/CreateChannelPage.jsx";
-import ChannelPage from "./components/ChannelPage.jsx";
+import HomePage from "./page/HomePage.jsx";
+import ErrorPage from "./page/ErrorPage.jsx";
+import VideoPage from "./page/videoPage.jsx";
+import SignIn from "./page/SignIn.jsx";
+import CreateChannelPage from "./page/CreateChannelPage.jsx";
+import ChannelPage from "./page/ChannelPage.jsx";
 const app = createBrowserRouter([
   {
     path: "/",

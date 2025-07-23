@@ -1,73 +1,95 @@
-import commentModel from "../models/comment.model.js";
+import mongoose from "mongoose"; // ✅ Add this at the top
+import commentModel from "../models/comment.model.js"; // and your model
 
 // Create a new comment
-export function addComment(req, res) {
-  const { video, message } = req.body;
+export async function addComment(req, res) {
+  const { video, message, user } = req.body;
 
-  // Create a new comment document
-  const newComment = new commentModel({
-    user,
-    video,
-    message,
-  });
+  if (!video || !message || !user) {
+    return res.status(400).json({ success: false, message: "Missing required fields" });
+  }
 
-  newComment
-    .save()
-    .then((data) => res.status(201).json({ success: true, message: data }))
-    .catch((err) =>
-      res.status(500).json({ success: false, error: err.message })
-    );
+  try {
+    const newComment = new commentModel({
+      uploader: user, // ✅ Fix field name
+      video,
+      message,
+    });
+
+    const saved = await newComment.save();
+    res.status(201).json({ success: true, message: saved });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
 }
 
-// Get all comments for a video
-export function getComments(req, res) {
-  const { videoId } = req.params;
+export async function getComments(req, res) {
+  const { id } = req.params; // ✅ match your route: /api/comments/:id
 
-  commentModel
-    .find({ video: videoId })
-    .then((comments) => res.status(200).json({ success: true, comments }))
-    .catch((err) =>
-      res.status(500).json({ success: false, error: err.message })
-    );
+  try {
+    const comments = await commentModel.aggregate([
+      { $match: { video: new mongoose.Types.ObjectId(id) } },
+      {
+        $lookup: {
+          from: "users",
+          localField: "uploader",
+          foreignField: "_id",
+          as: "uploaderInfo",
+        },
+      },
+      { $unwind: "$uploaderInfo" },
+      {
+        $project: {
+          message: 1,
+          createdAt: 1,
+          "uploaderInfo.username": 1,
+          "uploaderInfo.avatar": 1,
+        },
+      },
+    ]);
+
+    res.status(200).json({ success: true, comments });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
 }
 
 // Update a comment by ID
-export function updateComment(req, res) {
-  const { commentId } = req.params;
+export async function updateComment(req, res) {
+  const { id } = req.params;   // 🧠 corresponds to /api/comment/:id
   const { message } = req.body;
 
-  commentModel
-    .findByIdAndUpdate(commentId, { message }, { new: true })
-    .then((updatedComment) => {
-      if (!updatedComment) {
-        return res
-          .status(404)
-          .json({ success: false, error: "Comment not found" });
-      }
-      res.status(200).json({ success: true, updatedComment });
-    })
-    .catch((err) =>
-      res.status(500).json({ success: false, error: err.message })
-    );
+  try {
+    const comment = await commentModel.findById(id);
+    if (!comment) return res.status(404).json({ message: "Comment not found" });
+
+    if (String(comment.uploader) !== String(req.user._id)) {
+      return res.status(403).json({ message: "Unauthorized to update this comment" });
+    }
+
+    comment.message = message;
+    await comment.save();
+
+    return res.status(200).json({ message: "Comment updated", comment });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error });
+  }
 }
 
 // Delete a comment by ID
-export function deleteComment(req, res) {
-  const { commentId } = req.params;
+export async function deleteComment(req, res) {
+  const { id } = req.params;
 
-  commentModel
-    .findByIdAndDelete(commentId)
-    .then((deletedComment) => {
-      if (!deletedComment) {
-        return res
-          .status(404)
-          .json({ success: false, error: "Comment not found" });
-      }
-      res
-        .status(200)
-        .json({ success: true, message: "Comment deleted successfully" });
-    })
-    .catch((err) =>
-      res.status(500).json({ success: false, error: err.message })
-    );
+  try {
+    const comment = await commentModel.findById(id);
+    if (!comment) {
+      return res.status(404).json({ message: "Comment not found" });
+    }
+
+    await commentModel.findByIdAndDelete(id);
+    res.status(200).json({ message: "Comment deleted successfully" });
+  } catch (err) {
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
 }
+

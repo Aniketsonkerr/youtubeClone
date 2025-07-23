@@ -23,7 +23,7 @@ const videoSchema = new mongoose.Schema(
       ref: "user",
     },
     uploader: {
-      type: mongoose.Schema.Types.String,
+      type: mongoose.Schema.Types.ObjectId, 
       ref: "user",
     },
     views: {

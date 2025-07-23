@@ -2,8 +2,9 @@ import { CiBellOn, CiSearch } from "react-icons/ci";
 import { CgProfile } from "react-icons/cg";
 import { FiMenu } from "react-icons/fi";
 import { Link } from "react-router-dom";
-import { useContext } from "react";
+import { useContext, useState } from "react";
 import { AppContext } from "../utils/appContext";
+import youtubeImage from "../assets/youtubelogo.png";
 
 function Navbar() {
   const {
@@ -14,6 +15,8 @@ function Navbar() {
     isLogin,
     setIsLogin,
   } = useContext(AppContext);
+
+  const [mobileSearchVisible, setMobileSearchVisible] = useState(false);
 
   function handleClick() {
     if (searchedVideo.trim()) {
@@ -29,80 +32,93 @@ function Navbar() {
   };
 
   return (
-    <div className="flex flex-row text-sm items-center justify-between">
-      {/* Header */}
-      <div className="w-60 h-full relative">
-        <div className="flex flex-row items-center h-14 p-4">
-          <FiMenu
-            size={28}
-            className="mr-4 cursor-pointer"
-            title="Toggle Sidebar"
-            onClick={() => setToggleBar(!toggleBar)}
-            aria-label="Toggle Sidebar"
-          />
-          <img
-            className="w-24"
-            alt="YouTube Logo"
-            src="https://uxwing.com/wp-content/themes/uxwing/download/brands-and-social-media/youtube-logo-icon.png"
-          />
-        </div>
+    <nav className="flex items-center justify-between px-4 py-2 shadow-sm sticky top-0 bg-white z-50 w-full">
+      {/* Left: Menu + Logo */}
+      <div className="flex items-center w-auto md:w-60">
+        <FiMenu
+          size={24}
+          className="cursor-pointer mr-4"
+          onClick={() => setToggleBar(!toggleBar)}
+        />
+        <img src={youtubeImage} alt="YouTube Logo" className="w-24 h-auto" />
       </div>
 
-      {/* Search Bar */}
-      <div className="flex md:w-65 relative items-center flex-grow max-w-lg">
+      {/* Center: Search Bar */}
+      <div className="hidden md:flex items-center flex-grow max-w-xl mx-4">
         <input
           type="text"
-          className="w-full h-10 rounded-l-full border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:outline-none p-2"
+          className="w-full h-10 rounded-l-full border border-gray-300 px-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
           placeholder="Search"
-          onChange={(e) => setSearchedVideo(e.target.value)}
           value={searchedVideo}
-          aria-label="Search Videos"
+          onChange={(e) => setSearchedVideo(e.target.value)}
         />
         <button
-          className="bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded-r-full w-12 h-10 flex items-center justify-center"
-          aria-label="Search"
           onClick={handleClick}
+          className="w-14 h-10 rounded-r-full border border-gray-300 bg-gray-100 hover:bg-gray-200 flex items-center justify-center"
         >
-          <CiSearch className="text-gray-600" size={20} />
+          <CiSearch size={20} className="text-gray-600" />
         </button>
       </div>
 
-      {/* Right Section */}
-      <div className="flex items-center mr-8">
+      {/* Right: Icons + Auth */}
+      <div className="flex items-center gap-3">
+        {/* Mobile Search Icon */}
+        <div className="md:hidden">
+          <CiSearch
+            size={22}
+            className="text-gray-600 cursor-pointer"
+            onClick={() => setMobileSearchVisible(!mobileSearchVisible)}
+          />
+        </div>
+
         {isLogin && (
-          <Link to={"/createChannel"}>
-            <button className="px-4 py-2 ml-2 bg-blue-500 text-white rounded-full hover:bg-blue-600 focus:ring-2 focus:ring-blue-300">
+          <Link to="/createChannel">
+            <button className="hidden md:inline-block px-4 py-2 bg-blue-500 text-white rounded-full hover:bg-blue-600">
               + Create
             </button>
           </Link>
         )}
 
-        <CiBellOn
-          size={24}
-          className="text-gray-600 cursor-pointer ml-2 hover:text-gray-800"
-          title="Notifications"
-          aria-label="Notifications"
-        />
-        <div className="flex items-center ml-2 relative">
-          {isLogin ? (
-            <button
-              onClick={handleLogout}
-              className="group flex flex-row items-center"
-            >
-              <CgProfile size={24} className="text-gray-600" />
-              <span className="ml-2">Log out</span>
+        <CiBellOn size={22} className="text-gray-600 cursor-pointer" />
+
+        {/* Login / Logout */}
+        {isLogin ? (
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-1 text-gray-700 hover:text-black"
+          >
+            <CgProfile size={24} />
+            <span className="hidden md:inline">Log out</span>
+          </button>
+        ) : (
+          <Link to="/signIn">
+            <button className="flex items-center gap-1 text-gray-700 hover:text-black">
+              <CgProfile size={24} />
+              <span className="hidden md:inline">Sign In</span>
             </button>
-          ) : (
-            <Link to={"/signIn"}>
-              <button className="group flex flex-row items-center">
-                <CgProfile size={24} className="text-gray-600" />
-                <span className="ml-2">Sign In</span>
-              </button>
-            </Link>
-          )}
-        </div>
+          </Link>
+        )}
       </div>
-    </div>
+
+      {/* Mobile Search Bar */}
+      {mobileSearchVisible && (
+        <div className="absolute top-full left-0 w-full px-4 py-2 bg-white shadow-md md:hidden flex items-center">
+          <input
+            type="text"
+            className="w-full h-10 rounded-l-full border border-gray-300 px-4 focus:outline-none"
+            placeholder="Search"
+            value={searchedVideo}
+            onChange={(e) => setSearchedVideo(e.target.value)}
+          />
+          <button
+            onClick={handleClick}
+            className="w-12 h-10 rounded-r-full border border-gray-300 bg-gray-100 hover:bg-gray-200 flex items-center justify-center"
+          >
+            <CiSearch size={20} className="text-gray-600" />
+          </button>
+        </div>
+      )}
+    </nav>
   );
 }
 

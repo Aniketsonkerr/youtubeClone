@@ -5,42 +5,44 @@ import axios from "axios";
 
 function Channel({ currentChannel }) {
   const [videos, setVideos] = useState([]);
-  const [editingVideoId, setEditingVideoId] = useState(null); // Track ID of the video being edited
-  const [editDetails, setEditDetails] = useState({}); // Track updated details for the current video
+  const [editingVideoId, setEditingVideoId] = useState(null);
+  const [editDetails, setEditDetails] = useState({});
 
-  const { data, error, loading } = useFetch("http://localhost:3000/api/videos");
+  const { data, error, loading } = useFetch(
+    "https://youtubeclone-peqr.onrender.com/api/videos"
+  );
 
   useEffect(() => {
-    if (data) {
+    if (data && Array.isArray(data)) {
       setVideos(data);
     }
   }, [data]);
 
   const currentChannelVideos = useMemo(() => {
+    if (!videos.length || !currentChannel?.videos) return [];
     return videos.filter((video) => currentChannel.videos.includes(video._id));
   }, [videos, currentChannel]);
 
   const handleEditClick = (video) => {
-    setEditingVideoId(video._id); // Set the ID of the video being edited
-    setEditDetails({ title: video.title }); // Pre-fill the input with the current title
+    setEditingVideoId(video._id);
+    setEditDetails({ title: video.title });
   };
 
   const handleEditSave = async (videoId) => {
     try {
       const response = await axios.put(
-        `http://localhost:3000/api/video/${videoId}`,
+        `https://youtubeclone-peqr.onrender.com/api/video/${videoId}`,
         editDetails
       );
 
-      // Update the video in the local state
       setVideos((prevVideos) =>
         prevVideos.map((video) =>
           video._id === videoId ? { ...video, ...response.data } : video
         )
       );
 
-      setEditingVideoId(null); // Exit editing mode
-      setEditDetails({}); // Reset edit details
+      setEditingVideoId(null);
+      setEditDetails({});
       alert("Video updated successfully!");
     } catch (error) {
       console.error("Error updating video:", error);
@@ -50,10 +52,14 @@ function Channel({ currentChannel }) {
 
   const handleDeleteVideo = async (videoId) => {
     try {
-      await axios.delete(`http://localhost:3000/api/video/${videoId}`);
+      await axios.delete(
+        `https://youtubeclone-peqr.onrender.com/api/video/${videoId}`
+      );
+
       setVideos((prevVideos) =>
         prevVideos.filter((video) => video._id !== videoId)
       );
+
       alert("Video deleted successfully!");
     } catch (error) {
       console.error("Error deleting video:", error);
@@ -91,11 +97,11 @@ function Channel({ currentChannel }) {
       </p>
       <h2 className="text-2xl font-semibold text-gray-700 mb-2">Videos</h2>
       {currentChannelVideos.length > 0 ? (
-        <div className="flex flex-row items-center justify-start flex-wrap">
+        <div className="flex flex-wrap">
           {currentChannelVideos.map((video) => (
             <div
               key={video._id}
-              className="bg-white hover:scale-105 rounded hover:shadow transition-all duration-300 ease-in-out mr-3 mb-3"
+              className="bg-white hover:scale-105 rounded hover:shadow transition-all duration-300 ease-in-out mr-3 mb-3 p-2"
             >
               <Link to={`/video/${video._id}`}>
                 <div className="w-full relative">
@@ -109,12 +115,9 @@ function Channel({ currentChannel }) {
               <div className="mx-1 my-2">
                 <div className="flex flex-row justify-start items-center">
                   <img
-                    src={
-                      video.avatar ||
-                      "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR9UdkG68P9AHESMfKJ-2Ybi9pfnqX1tqx3wQ&s"
-                    }
+                    src={video.avatar || "https://via.placeholder.com/50"}
                     alt="uploader"
-                    className="w-10 rounded-full h-10 mr-2 mb-7"
+                    className="w-10 rounded-full h-10 mr-2"
                   />
                   <div className="flex flex-col">
                     {editingVideoId === video._id ? (

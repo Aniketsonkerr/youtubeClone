@@ -35,6 +35,22 @@ export function createChannel(req, res) {
     });
 }
 
+export async function getChannelById(req, res) {
+  const { id } = req.params;
+
+  try {
+    const channel = await channelModel.findById(id).populate("videos");
+    if (!channel) {
+      return res.status(404).json({ message: "Channel not found" });
+    }
+
+    res.status(200).json(channel);
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error });
+  }
+}
+
+
 export function getChannels(req, res) {
   channelModel
     .find()
