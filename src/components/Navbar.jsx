@@ -1,10 +1,10 @@
+import { useContext, useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { AppContext } from "../utils/appContext";
+import youtubeImage from "../assets/youtubelogo.png";
 import { CiBellOn, CiSearch } from "react-icons/ci";
 import { CgProfile } from "react-icons/cg";
 import { FiMenu } from "react-icons/fi";
-import { Link } from "react-router-dom";
-import { useContext, useState } from "react";
-import { AppContext } from "../utils/appContext";
-import youtubeImage from "../assets/youtubelogo.png";
 
 function Navbar() {
   const {
@@ -17,23 +17,75 @@ function Navbar() {
   } = useContext(AppContext);
 
   const [mobileSearchVisible, setMobileSearchVisible] = useState(false);
+  const [userChannel, setUserChannel] = useState(null);
 
-  function handleClick() {
+  const navigate = useNavigate();
+
+  // ✅ Fetch user channel on mount if logged in
+useEffect(() => {
+  const fetchUserChannel = async () => {
+    try {
+      const userId = localStorage.getItem("userId");
+      const token = localStorage.getItem("accessToken");
+
+      if (!userId || !token) return;
+
+      const res = await fetch(`http://localhost:3000/api/user/${userId}`, {
+        headers: {
+          Authorization: `JWT ${token}`,
+        },
+      });
+
+      const data = await res.json();
+
+      if (
+        data &&
+        Array.isArray(data.channels) &&
+        data.channels.length > 0
+      ) {
+        const firstChannelId = data.channels[0];
+
+        const channelRes = await fetch(
+          `http://localhost:3000/api/channel/${firstChannelId}`
+        );
+
+        const channelData = await channelRes.json();
+
+        if (channelData) {
+          setUserChannel(channelData);
+        }
+        console.log("User channel:", userChannel);
+
+      }
+    } catch (error) {
+      console.error("Error fetching user channel:", error);
+    }
+  };
+
+  if (isLogin) {
+    fetchUserChannel();
+  }
+}, [isLogin]);
+
+  const handleClick = () => {
     if (searchedVideo.trim()) {
       console.log(searchedVideo);
       setSearchedVideo("");
     }
-  }
+  };
 
   const handleLogout = () => {
     localStorage.removeItem("accessToken");
+    localStorage.removeItem("userId");
     setIsLogin(false);
+    setUserChannel(null);
     alert("You have been logged out.");
+    navigate("/home");
   };
 
   return (
     <nav className="flex items-center justify-between px-4 py-2 shadow-sm sticky top-0 bg-white z-50 w-full">
-      {/* Left: Menu + Logo */}
+      {/* Left: Logo/Menu */}
       <div className="flex items-center w-auto md:w-60">
         <FiMenu
           size={24}
@@ -43,7 +95,7 @@ function Navbar() {
         <img src={youtubeImage} alt="YouTube Logo" className="w-24 h-auto" />
       </div>
 
-      {/* Center: Search Bar */}
+      {/* Search bar (desktop) */}
       <div className="hidden md:flex items-center flex-grow max-w-xl mx-4">
         <input
           type="text"
@@ -60,9 +112,9 @@ function Navbar() {
         </button>
       </div>
 
-      {/* Right: Icons + Auth */}
+      {/* Icons + Auth */}
       <div className="flex items-center gap-3">
-        {/* Mobile Search Icon */}
+        {/* Mobile search icon */}
         <div className="md:hidden">
           <CiSearch
             size={22}
@@ -71,7 +123,8 @@ function Navbar() {
           />
         </div>
 
-        {isLogin && (
+        {/* ✅ Show Create or Channel button */}
+        {isLogin && !userChannel && (
           <Link to="/createChannel">
             <button className="hidden md:inline-block px-4 py-2 bg-blue-500 text-white rounded-full hover:bg-blue-600">
               + Create
@@ -79,9 +132,24 @@ function Navbar() {
           </Link>
         )}
 
+        {isLogin && userChannel && (
+          <Link to={`/channel/${userChannel._id}`}>
+            <button className="hidden md:flex items-center gap-2 border border-gray-200 px-3 py-1 rounded-full hover:bg-gray-100">
+              <img
+                src={userChannel.channelBanner || "https://via.placeholder.com/36"}
+                alt={userChannel.channelName}
+                className="w-6 h-6 object-cover rounded-full"
+              />
+              <span className="text-gray-800 font-normal">
+                {userChannel.channelName}
+              </span>
+            </button>
+          </Link>
+        )}
+
         <CiBellOn size={22} className="text-gray-600 cursor-pointer" />
 
-        {/* Login / Logout */}
+        {/* Auth buttons */}
         {isLogin ? (
           <button
             onClick={handleLogout}
@@ -100,7 +168,7 @@ function Navbar() {
         )}
       </div>
 
-      {/* Mobile Search Bar */}
+      {/* Mobile search bar */}
       {mobileSearchVisible && (
         <div className="absolute top-full left-0 w-full px-4 py-2 bg-white shadow-md md:hidden flex items-center">
           <input

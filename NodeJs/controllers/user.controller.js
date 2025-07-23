@@ -83,6 +83,7 @@ export function getUser(req, res) {
 
   userModel
     .findById(id)
+    .populate("channels")
     .then((user) => {
       if (!user) {
         return res.status(404).json({ message: "User not found" });
@@ -94,6 +95,7 @@ export function getUser(req, res) {
       return res.status(500).json({ message: "Server error", error });
     });
 }
+
 
 export function updateUser(req, res) {
   const { id } = req.params;
