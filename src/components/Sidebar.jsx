@@ -162,6 +162,7 @@ function Sidebar() {
         <hr />
         <div className="flex flex-col items-center text-gray-500 text-sm">
           <table className="grid grid-rows-3 p-4 font-medium">
+            <tbody>
             <tr>
               <td>
                 <Link>About</Link>
@@ -189,8 +190,10 @@ function Sidebar() {
                 <Link>Developers</Link>
               </td>
             </tr>
+            </tbody>
           </table>
           <table className="grid grid-rows-3 p-2 font-medium">
+            <tbody>
             <tr>
               <td>
                 <Link>Terms</Link>
@@ -212,6 +215,7 @@ function Sidebar() {
                 <Link>Test new features</Link>
               </td>
             </tr>
+            </tbody>
           </table>
           <p>© 2024 Google LLC</p>
         </div>
