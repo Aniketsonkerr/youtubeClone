@@ -17,7 +17,7 @@ function ChannelPage() {
 
   if (!currentChannel)
     return <p className="text-gray-600">Channel not found.</p>;
-
+  
   return <Channel currentChannel={currentChannel} />;
 }
 

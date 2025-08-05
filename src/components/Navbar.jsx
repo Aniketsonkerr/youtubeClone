@@ -17,7 +17,7 @@ function Navbar() {
   } = useContext(AppContext);
 
   const [mobileSearchVisible, setMobileSearchVisible] = useState(false);
-  const [userChannel, setUserChannel] = useState(null);
+  const [userChannel, setUserChannel] = useState("");
 
   const navigate = useNavigate();
 
@@ -37,20 +37,21 @@ useEffect(() => {
       });
 
       const data = await res.json();
-
+      console.log(data);
       if (
         data &&
         Array.isArray(data.channels) &&
         data.channels.length > 0
       ) {
         const firstChannelId = data.channels[0];
-
+        console.log(firstChannelId._id);
         const channelRes = await fetch(
-          `http://localhost:3000/api/channel/${firstChannelId}`
+          `http://localhost:3000/api/channel/${firstChannelId._id}`
         );
-
+        
+        console.log(channelRes)
         const channelData = await channelRes.json();
-
+        console.log(channelData);
         if (channelData) {
           setUserChannel(channelData);
         }

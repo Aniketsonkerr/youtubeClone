@@ -9,7 +9,7 @@ function Channel({ currentChannel }) {
   const [editDetails, setEditDetails] = useState({});
 
   const { data, error, loading } = useFetch(
-    "https://youtubeclone-peqr.onrender.com/api/videos"
+    "http://localhost:3000/api/videos"
   );
 
   useEffect(() => {
@@ -31,7 +31,7 @@ function Channel({ currentChannel }) {
   const handleEditSave = async (videoId) => {
     try {
       const response = await axios.put(
-        `https://youtubeclone-peqr.onrender.com/api/video/${videoId}`,
+        `http://localhost:3000/api/video/${videoId}`,
         editDetails
       );
 
@@ -52,9 +52,7 @@ function Channel({ currentChannel }) {
 
   const handleDeleteVideo = async (videoId) => {
     try {
-      await axios.delete(
-        `https://youtubeclone-peqr.onrender.com/api/video/${videoId}`
-      );
+      await axios.delete(`http://localhost:3000/api/video/${videoId}`);
 
       setVideos((prevVideos) =>
         prevVideos.filter((video) => video._id !== videoId)
@@ -95,6 +93,7 @@ function Channel({ currentChannel }) {
       <p className="text-sm text-gray-500 mb-4">
         Subscribers: <strong>{currentChannel.subscribers}</strong>
       </p>
+
       <h2 className="text-2xl font-semibold text-gray-700 mb-2">Videos</h2>
       {currentChannelVideos.length > 0 ? (
         <div className="flex flex-wrap">
@@ -184,8 +183,12 @@ function Channel({ currentChannel }) {
       ) : (
         <p className="text-gray-500">No videos uploaded yet.</p>
       )}
+
       <p className="text-sm text-gray-400 mt-6">
-        Owner ID: {currentChannel.owner}
+        Owner ID:{" "}
+        {typeof currentChannel.owner === "string"
+          ? currentChannel.owner
+          : currentChannel.owner?.username || "Unknown"}
       </p>
     </div>
   );

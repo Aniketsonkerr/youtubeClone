@@ -2,6 +2,31 @@
 import channelModel from "../models/channel.model.js";
 import userModel from "../models/user.model.js"; // ✅ Need this to update user
 
+import mongoose from "mongoose";
+
+export async function getChannelById(req, res) {
+  const { id } = req.params;
+
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return res.status(400).json({ message: "Invalid channel ID" });
+  }
+
+  try {
+    const channel = await channelModel.findById(id)
+      .populate("videos")
+      .populate("owner", "username email");
+
+    if (!channel) {
+      return res.status(404).json({ message: "Channel not found" });
+    }
+
+    res.status(200).json(channel);
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error });
+  }
+}
+
+
 export async function createChannel(req, res) {
   const { channelName, description, channelBanner, subscribers } = req.body;
 
@@ -41,20 +66,7 @@ export async function createChannel(req, res) {
     return res.status(500).json({ message: "Internal server error", error });
   }
 }
-export async function getChannelById(req, res) {
-  const { id } = req.params;
 
-  try {
-    const channel = await channelModel.findById(id).populate("videos");
-    if (!channel) {
-      return res.status(404).json({ message: "Channel not found" });
-    }
-
-    res.status(200).json(channel);
-  } catch (error) {
-    res.status(500).json({ message: "Server error", error });
-  }
-}
 
 
 export function getChannels(req, res) {
