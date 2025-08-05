@@ -1,80 +1,68 @@
-import { useContext, useState, useEffect, useMemo } from "react";
+import { useContext, useState, useEffect, useMemo, useCallback } from "react";
 import { AppContext } from "../utils/appContext";
 import { Link } from "react-router-dom";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import { useInView } from "react-intersection-observer";
 
-dayjs.extend(relativeTime); // For "x hours ago"
+dayjs.extend(relativeTime);
 
 function HomePage() {
   const { searchedVideo } = useContext(AppContext);
   const [videos, setVideos] = useState([]);
-  const [limit] = useState(9);
+  const [limit] = useState(1000); // Increased limit to load many videos at once
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [selectedGenre, setSelectedGenre] = useState("All");
 
-  const { ref, inView } = useInView(); // 👁️ used for infinite scroll
+  const { ref, inView } = useInView();
 
-  // Fetch videos from API
- useEffect(() => {
-  let ignore = false;
+  // Fetch videos only once or on page change (if you want pagination)
+  useEffect(() => {
+    let ignore = false;
 
-  const loadVideos = async () => {
-    if (!hasMore || loading) return;
-    setLoading(true);
-    try {
-      const genreQuery =
-        selectedGenre && selectedGenre !== "All"
-          ? `&genre=${encodeURIComponent(selectedGenre)}`
-          : "";
+    const loadVideos = async () => {
+      if (loading) return;
+      if (!hasMore) return;
 
-      const response = await fetch(
-        `http://localhost:3000/api/videos?page=${page}&limit=${limit}${genreQuery}`
-      );
-
-      if (!response.ok) throw new Error("Failed to load videos");
-
-      const result = await response.json();
-      const newVideos = result.videos || [];
-      if (page === 1) {
-  setVideos(newVideos);
-} else {
-  setVideos((prev) => [...prev, ...newVideos]);
-}
-
-
-      if (!ignore) {
-        setVideos((prev) =>
-          page === 1 ? newVideos : [...prev, ...newVideos]
+      setLoading(true);
+      try {
+        const response = await fetch(
+          `http://localhost:3000/api/videos?page=${page}&limit=${limit}`
         );
 
-        if (newVideos.length < limit) setHasMore(false);
+        if (!response.ok) throw new Error("Failed to load videos");
+
+        const result = await response.json();
+        const newVideos = result.videos || [];
+
+        if (!ignore) {
+          setVideos((prev) => [...prev, ...newVideos]);
+
+          if (newVideos.length < limit) setHasMore(false);
+        }
+      } catch (err) {
+        if (!ignore) console.error("Error loading videos:", err);
+      } finally {
+        if (!ignore) setLoading(false);
       }
-    } catch (err) {
-      if (!ignore) console.error("Error loading videos:", err);
-    } finally {
-      if (!ignore) setLoading(false);
-    }
-  };
+    };
 
-  loadVideos();
-  return () => {
-    ignore = true;
-  };
-}, [page, selectedGenre]);
+    loadVideos();
+    return () => {
+      ignore = true;
+    };
+  }, [page]); // genre change no longer triggers fetching
 
-
-  // Infinite scroll: Increment page when in view
+  // Infinite Scroll - load more videos when in view
   useEffect(() => {
     if (inView && hasMore && !loading) {
       setPage((prev) => prev + 1);
     }
   }, [inView, hasMore, loading]);
 
-  // Genre list generation
+  // Generate genres from the full videos list for static slider
   const genres = useMemo(() => {
     const set = new Set(["All"]);
     videos.forEach((video) =>
@@ -83,7 +71,7 @@ function HomePage() {
     return Array.from(set);
   }, [videos]);
 
-  // Filtered videos based on title and genre
+  // Filter videos in UI based on selectedGenre and searchedVideo
   const filteredVideos = useMemo(() => {
     return [...videos]
       .filter((video) => {
@@ -102,6 +90,11 @@ function HomePage() {
       );
   }, [searchedVideo, selectedGenre, videos]);
 
+  // Just set genre here without clearing videos or resetting pagination
+  const handleGenreChange = useCallback((genre) => {
+    setSelectedGenre(genre);
+  }, []);
+
   const formatViews = (views) => {
     if (views >= 1_000_000) return `${(views / 1_000_000).toFixed(1)}M`;
     if (views >= 1_000) return `${(views / 1_000).toFixed(1)}K`;
@@ -110,7 +103,7 @@ function HomePage() {
 
   return (
     <>
-      {/* Genres Filter */}
+      {/* Static Genres Slider */}
       <div className="flex flex-wrap justify-center gap-2 py-4 px-3">
         {genres.map((genre) => (
           <button
@@ -120,12 +113,7 @@ function HomePage() {
                 ? "bg-blue-600 text-white"
                 : "bg-gray-200 text-gray-700 hover:bg-gray-300"
             }`}
-            onClick={() => {
-              setVideos([]);     // reset videos when changing genre
-              setPage(1);        // reset pagination
-              setHasMore(true);  // allow new scroll
-              setSelectedGenre(genre);
-            }}
+            onClick={() => handleGenreChange(genre)}
           >
             {genre}
           </button>
