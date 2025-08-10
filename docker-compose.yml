@@ -1,0 +1,31 @@
+services:
+  backend:
+    build:
+      context: ./Nodejs
+      dockerfile: Dockerfile.dev
+    ports:
+      - "3000:3000"
+    env_file:
+      - ./Nodejs/.env
+    volumes:
+     - ./Nodejs:/app
+     - /app/node_modules
+
+    command: ["nodemon", "index.js"]
+
+
+  frontend:
+    build:
+      context: ../youtubeClone
+      dockerfile: Dockerfile.dev
+    ports:
+      - "5173:5173"
+    environment:
+      - REACT_APP_BACKEND_URL=http://localhost:3000
+    volumes:
+      - .:/app
+      - /app/node_modules
+    command: ["npm", "run", "start", "--", "--host"]
+
+    depends_on:
+      - backend
