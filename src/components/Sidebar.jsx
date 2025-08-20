@@ -29,7 +29,7 @@ function Sidebar() {
   const { toggleBar } = useContext(AppContext);
   return (
     <>
-      <div className={`${toggleBar ? " block " : " hidden "} absolute `}>
+      <div className={`${toggleBar ? " block " : " hidden "} absolute bg-white w-64`}>
         <div className="flex flex-col items-center p-4 ">
           <ul className="flex flex-col flex-start ">
             <li className="flex flex-row justify-start p-1 mb-2 hover:bg-slate-100 rounded-lg ">

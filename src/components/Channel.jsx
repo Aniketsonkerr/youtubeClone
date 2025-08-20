@@ -78,7 +78,7 @@ function Channel({ currentChannel }) {
   }
 
   return (
-    <div className="container mx-auto p-4 bg-white rounded-lg shadow-md">
+    <div className= "container mx-auto p-4 bg-white rounded-lg shadow-md">
       <div className="w-full h-60 mb-4 overflow-hidden rounded-lg">
         <img
           src={currentChannel.channelBanner}
