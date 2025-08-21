@@ -15,10 +15,11 @@ function HomePage() {
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [selectedGenre, setSelectedGenre] = useState("All");
+  const [channels, setChannels] = useState({});
 
   const { ref, inView } = useInView();
 
-  // Fetch videos only once or on page change (if you want pagination)
+  // Fetch videos only once or on page change
   useEffect(() => {
     let ignore = false;
 
@@ -36,7 +37,7 @@ function HomePage() {
 
         const result = await response.json();
         const newVideos = result.videos || [];
-
+        console.log("Fetched videos:", newVideos.length);
         if (!ignore) {
           setVideos((prev) => [...prev, ...newVideos]);
 
@@ -53,7 +54,7 @@ function HomePage() {
     return () => {
       ignore = true;
     };
-  }, [page]); // genre change no longer triggers fetching
+  }, [page]);
 
   // Infinite Scroll - load more videos when in view
   useEffect(() => {
@@ -61,6 +62,42 @@ function HomePage() {
       setPage((prev) => prev + 1);
     }
   }, [inView, hasMore, loading]);
+
+  // Extract unique channel IDs from videos
+  const uniqueChannelIds = useMemo(() => {
+    const ids = new Set();
+    videos.forEach((video) => {
+      if (video.channelId) ids.add(video.channelId);
+    });
+    return Array.from(ids);
+  }, [videos]);
+
+  // Fetch channel data for unique channel IDs
+  useEffect(() => {
+    const fetchChannels = async () => {
+      try {
+        const promises = uniqueChannelIds.map((id) =>
+          fetch(`http://localhost:3000/api/channel/${id}`).then((res) => {
+            if (!res.ok) throw new Error("Failed to fetch channel");
+            return res.json();
+          })
+        );
+
+        const results = await Promise.all(promises);
+        const channelsMap = {};
+        results.forEach((channel) => {
+          channelsMap[channel._id] = channel.channelName;
+        });
+        setChannels(channelsMap);
+      } catch (err) {
+        console.error("Error fetching channels:", err);
+      }
+    };
+
+    if (uniqueChannelIds.length > 0) {
+      fetchChannels();
+    }
+  }, [uniqueChannelIds]);
 
   // Generate genres from the full videos list for static slider
   const genres = useMemo(() => {
@@ -90,7 +127,6 @@ function HomePage() {
       );
   }, [searchedVideo, selectedGenre, videos]);
 
-  // Just set genre here without clearing videos or resetting pagination
   const handleGenreChange = useCallback((genre) => {
     setSelectedGenre(genre);
   }, []);
@@ -143,11 +179,10 @@ function HomePage() {
             <div className="p-3 space-y-1">
               <h2 className="text-md font-semibold">{video.title}</h2>
               <p className="text-sm text-gray-600">
-                {video.uploader?.username || "Unknown Creator"}
+                {channels[video.channelId] || "Unknown Channel"}
               </p>
               <p className="text-xs text-gray-500">
-                {formatViews(video.views)} views •{" "}
-                {dayjs(video.uploadDate).fromNow()}
+                {formatViews(video.views)} views • {dayjs(video.uploadDate).fromNow()}
               </p>
             </div>
           </div>

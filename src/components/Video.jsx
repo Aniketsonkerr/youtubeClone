@@ -1,4 +1,4 @@
-import React, { useRef, useState ,useEffect} from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
@@ -9,7 +9,6 @@ import {
   AiOutlineEllipsis,
 } from "react-icons/ai";
 
-
 dayjs.extend(relativeTime);
 
 function Video({ video }) {
@@ -18,25 +17,24 @@ function Video({ video }) {
   const [hasSentView, setHasSentView] = useState(false);
   const videoRef = useRef(null);
   const descriptionMaxChars = 140;
-  const [uploader, setUploader] = useState(null);
-  
+  const [channel, setChannel] = useState(null);
+
   useEffect(() => {
-  const fetchUploader = async () => {
-    try {
-      const res = await fetch(`http://localhost:3000/api/user/${video.uploader}`);
-      const data = await res.json();
-      setUploader(data.username); // assuming API returns `{ username, email, ... }`
-    } catch (err) {
-      console.error("Failed to load uploader info:", err);
-    }
-  };
+    const fetchChannel = async () => {
+      try {
+        if (!video.channelId) return; // no channelId to fetch
+        const res = await fetch(`http://localhost:3000/api/channel/${video.channelId}`);
+        if (!res.ok) throw new Error("Failed to fetch channel data");
+        const data = await res.json();
+        setChannel(data);
+      } catch (err) {
+        console.error("Failed to load channel info:", err);
+      }
+    };
 
-  if (video.uploader && typeof video.uploader === "string") {
-    fetchUploader();
-  }
-}, [video.uploader]);
+    fetchChannel();
+  }, [video.channelId]);
 
-  const channel = video.channel || {};
   const viewsText =
     video.views && video.views >= 1000
       ? `${(video.views / 1000).toFixed(1)}K`
@@ -63,7 +61,7 @@ function Video({ video }) {
   };
 
   return (
-    <div className="bg-white  max-w-3xl  text-gray-800">
+    <div className="bg-white max-w-3xl text-gray-800">
       {/* Video Player */}
       <video
         ref={videoRef}
@@ -89,21 +87,20 @@ function Video({ video }) {
       <div className="flex flex-row items-center justify-between mt-4 mb-4">
         <div className="flex items-center gap-3">
           <img
-            src={channel.avatar || "https://via.placeholder.com/40"}
-            alt={channel.channelName}
+            src={channel?.channelBanner || "https://via.placeholder.com/40"}
+            alt={channel?.channelName || "Channel"}
             className="w-10 h-10 rounded-full object-cover"
           />
           <div className="flex flex-col">
-  <Link to={`/channel/${video.channelId || video.uploader}`}>
-    <span className="font-semibold">
-      {channel.channelName || uploader || "Creator"}
-    </span>
-  </Link>
-  <span className="text-sm text-gray-500">
-    {channel.subscribers ? `${channel.subscribers} subscribers` : ""}
-  </span>
-</div>
-
+            <Link to={`/channel/${video.channelId}`}>
+              <span className="font-semibold">
+                {channel?.channelName || "Creator"}
+              </span>
+            </Link>
+            <span className="text-sm text-gray-500">
+              {channel?.subscribers ? `${channel.subscribers} subscribers` : ""}
+            </span>
+          </div>
         </div>
         <div className="flex items-center gap-2">
           <button className="px-4 py-2 rounded-full bg-blue-600 text-white font-medium hover:bg-blue-700">
