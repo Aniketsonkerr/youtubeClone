@@ -1,27 +1,46 @@
-import { useState, useEffect, useMemo } from "react";
-import useFetch from "../utils/useFetch";
+import { useState, useEffect, useContext } from "react";
 import { Link } from "react-router-dom";
 import axios from "axios";
+import { AppContext } from "../utils/appContext";
 
 function Channel({ currentChannel }) {
+  const { user } = useContext(AppContext); // user._id expected from context
   const [videos, setVideos] = useState([]);
   const [editingVideoId, setEditingVideoId] = useState(null);
   const [editDetails, setEditDetails] = useState({});
 
-  const { data, error, loading } = useFetch(
-    "http://localhost:3000/api/videos"
-  );
+  // Ensured owner ObjectId string match
+  const ownerId =
+    typeof currentChannel.owner === "string"
+      ? currentChannel.owner
+      : currentChannel.owner?._id || currentChannel.owner?.toString();
 
+  const isOwner = user && user._id === ownerId;
+
+  // Only fetch videos listed in currentChannel.videos (each should be string or ObjectId)
   useEffect(() => {
-    if (data && Array.isArray(data)) {
-      setVideos(data);
+    async function fetchChannelVideos() {
+      if (!currentChannel?.videos?.length) {
+        setVideos([]);
+        return;
+      }
+      try {
+        // Each channel video is expected to be string ObjectId; fallback to ._id if object
+        const promises = currentChannel.videos.map((vid) => {
+          const videoId = typeof vid === "string" ? vid : vid._id;
+          return axios
+            .get(`http://localhost:3000/api/video/${videoId}`)
+            .then((res) => res.data);
+        });
+        const results = await Promise.all(promises);
+        setVideos(results);
+      } catch (error) {
+        console.error("Error loading channel videos:", error);
+        setVideos([]);
+      }
     }
-  }, [data]);
-
-  const currentChannelVideos = useMemo(() => {
-    if (!videos.length || !currentChannel?.videos) return [];
-    return videos.filter((video) => currentChannel.videos.includes(video._id));
-  }, [videos, currentChannel]);
+    fetchChannelVideos();
+  }, [currentChannel]);
 
   const handleEditClick = (video) => {
     setEditingVideoId(video._id);
@@ -32,7 +51,10 @@ function Channel({ currentChannel }) {
     try {
       const response = await axios.put(
         `http://localhost:3000/api/video/${videoId}`,
-        editDetails
+        editDetails,
+        {
+          headers: { Authorization: `Bearer ${user.token}` }
+        }
       );
 
       setVideos((prevVideos) =>
@@ -52,7 +74,9 @@ function Channel({ currentChannel }) {
 
   const handleDeleteVideo = async (videoId) => {
     try {
-      await axios.delete(`http://localhost:3000/api/video/${videoId}`);
+      await axios.delete(`http://localhost:3000/api/video/${videoId}`, {
+        headers: { Authorization: `Bearer ${user.token}` }
+      });
 
       setVideos((prevVideos) =>
         prevVideos.filter((video) => video._id !== videoId)
@@ -69,16 +93,8 @@ function Channel({ currentChannel }) {
     return <p className="text-gray-500">No channel selected.</p>;
   }
 
-  if (loading) {
-    return <p>Loading...</p>;
-  }
-
-  if (error) {
-    return <p className="text-red-500">Error: {error}</p>;
-  }
-
   return (
-    <div className= "container mx-auto p-4 bg-white rounded-lg shadow-md">
+    <div className="container mx-auto p-4 bg-white rounded-lg shadow-md">
       <div className="w-full h-60 mb-4 overflow-hidden rounded-lg">
         <img
           src={currentChannel.channelBanner}
@@ -95,9 +111,9 @@ function Channel({ currentChannel }) {
       </p>
 
       <h2 className="text-2xl font-semibold text-gray-700 mb-2">Videos</h2>
-      {currentChannelVideos.length > 0 ? (
+      {videos.length > 0 ? (
         <div className="flex flex-wrap">
-          {currentChannelVideos.map((video) => (
+          {videos.map((video) => (
             <div
               key={video._id}
               className="bg-white hover:scale-105 rounded hover:shadow transition-all duration-300 ease-in-out mr-3 mb-3 p-2"
@@ -159,24 +175,26 @@ function Channel({ currentChannel }) {
                   </div>
                 </div>
               </div>
-              <div className="flex justify-between items-center mt-2 px-2">
-                {editingVideoId !== video._id && (
-                  <>
-                    <button
-                      onClick={() => handleEditClick(video)}
-                      className="text-blue-500 hover:underline"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => handleDeleteVideo(video._id)}
-                      className="text-red-500 hover:underline"
-                    >
-                      Delete
-                    </button>
-                  </>
-                )}
-              </div>
+              {isOwner && (
+                <div className="flex justify-between items-center mt-2 px-2">
+                  {editingVideoId !== video._id && (
+                    <>
+                      <button
+                        onClick={() => handleEditClick(video)}
+                        className="text-blue-500 hover:underline"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleDeleteVideo(video._id)}
+                        className="text-red-500 hover:underline"
+                      >
+                        Delete
+                      </button>
+                    </>
+                  )}
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -184,12 +202,6 @@ function Channel({ currentChannel }) {
         <p className="text-gray-500">No videos uploaded yet.</p>
       )}
 
-      <p className="text-sm text-gray-400 mt-6">
-        Owner ID:{" "}
-        {typeof currentChannel.owner === "string"
-          ? currentChannel.owner
-          : currentChannel.owner?.username || "Unknown"}
-      </p>
     </div>
   );
 }
