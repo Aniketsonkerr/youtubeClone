@@ -1,9 +1,10 @@
 import videoModel from "../models/video.model.js";
+import { cloudinary } from "../utils/cloudinary.js";
+import fs from "fs";
 
 export async function uploadVideo(req, res) {
   const {
     title,
-    videoLink,
     description,
     thumbnailUrl,
     channelId,
@@ -21,9 +22,21 @@ export async function uploadVideo(req, res) {
       return res.status(400).json({ message: "Video title already exists" });
     }
 
+    if (!req.file) {
+      return res.status(400).json({ message: "No video file uploaded" });
+    }
+
+    // Upload to Cloudinary with resource_type 'video'
+    const result = await cloudinary.uploader.upload(req.file.path, {
+      resource_type: "video",
+    });
+
+    // Remove temp file after upload
+    fs.unlinkSync(req.file.path);
+
     const newVideo = new videoModel({
       title,
-      videoLink,
+      videoLink: result.secure_url, // cloudinary's hosted video URL
       description,
       thumbnailUrl,
       channelId,
@@ -33,18 +46,17 @@ export async function uploadVideo(req, res) {
       likes,
       dislikes,
       genres,
-      uploader: req.user.username,
-      uploaderId: req.user.id,
+      uploader: req.user._id,
     });
 
     const saved = await newVideo.save();
     return res.status(201).json({ message: "Video saved successfully", video: saved });
-
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: "Server error", error });
   }
 }
+
 export async function getVideos(req, res) {
   const { id } = req.params;
   const page = parseInt(req.query.page) || 1;
