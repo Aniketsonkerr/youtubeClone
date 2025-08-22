@@ -130,7 +130,7 @@ function Channel({ currentChannel }) {
               <div className="mx-1 my-2">
                 <div className="flex flex-row justify-start items-center">
                   <img
-                    src={video.avatar || "https://via.placeholder.com/50"}
+                    src={currentChannel.channelBanner || "https://via.placeholder.com/50"}
                     alt="uploader"
                     className="w-10 rounded-full h-10 mr-2"
                   />
