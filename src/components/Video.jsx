@@ -63,22 +63,25 @@ function Video({ video }) {
   return (
     <div className="bg-white max-w-3xl text-gray-800">
       {/* Video Player */}
-      <video
-        ref={videoRef}
-        className="w-full rounded-lg shadow-sm"
-        controls
-        preload="metadata"
-        poster={
-          video.thumbnailUrl?.startsWith("http")
-            ? video.thumbnailUrl
-            : "https://via.placeholder.com/320x180?text=Preview"
-        }
-        onPlay={handleView}
-        onEnded={handleEnded}
-      >
-        <source src={video.videoLink} type="video/mp4" />
-        Your browser does not support the video tag.
-      </video>
+      <div className="relative w-full" style={{ paddingTop: "56.25%" }}>
+  <video
+    ref={videoRef}
+    className="absolute top-0 left-0 w-full h-full rounded-lg shadow-sm object-cover"
+    controls
+    preload="metadata"
+    poster={
+      video.thumbnailUrl?.startsWith("http")
+        ? video.thumbnailUrl
+        : "https://via.placeholder.com/320x180?text=Preview"
+    }
+    onPlay={handleView}
+    onEnded={handleEnded}
+  >
+    <source src={video.videoLink} type="video/mp4" />
+    Your browser does not support the video tag.
+  </video>
+</div>
+
 
       {/* Title */}
       <h1 className="text-xl md:text-2xl font-bold mt-4">{video.title}</h1>
